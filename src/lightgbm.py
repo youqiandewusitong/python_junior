@@ -7,9 +7,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 def prob2label(proba):
     proba = np.array(proba).reshape(proba.shape[0], -1)
     if proba.shape[1] == 1:
-        return (proba > 0.5).astype('int')
+        return (proba > 0.5).astype('int')#转化为int
     else:
-        return proba.argmax(axis=1)
+        return proba.argmax(axis=1)#对应最大值的索引
 
 
 _score_name2func = {
@@ -25,6 +25,7 @@ _score_name2func = {
     'rmse': lambda t, p: mean_squared_error(t, p)**0.5,
     'r2': r2_score,
 }
+#字典
 
 
 def _get_score_names_funcs(score_names='', score_funcs=None):
@@ -183,11 +184,11 @@ def lgb_reg_hold_out(
     ytrain_pred = ytrain.copy()
     yvalid_pred = yvalid.copy()
     ytest_pred = np.zeros(len(Xtest))
-
+    # 这个数组用于存储对Xtest数据集的预测结果。初始时，所有的预测结果都被设置为零。这个数组可以在后续的代码中根据模型的预测结果进行更新
     callbacks = [lgb.log_evaluation(period=eval_epoch),
                  lgb.early_stopping(stopping_rounds=early_stopping_rounds)]
 
-    t0 = time()
+    t0 = time()#获取当前时间
     if use_native_api:
         model = lgb.train(params=params,
                           train_set=get_train_matrix(),
@@ -196,10 +197,11 @@ def lgb_reg_hold_out(
                           # verbose_eval=eval_epoch,
                           # early_stopping_rounds=early_stopping_rounds,
                           callbacks=callbacks)
+        #回调函数
         best_iter = model.best_iteration
 #         ytrain_pred[list(trn_x.index)] = model.predict(trn_x, num_iteration=best_iter)
 #         ytrain_pred[list(val_x.index)] = model.predict(val_x, num_iteration=best_iter)
-        ytrain_pred[LABEL] = model.predict(Xtrain, num_iteration=best_iter)
+        ytrain_pred[LABEL] = model.predict(Xtrain, num_iteration=best_iter)#预测的模型
         yvalid_pred[LABEL] = model.predict(Xvalid, num_iteration=best_iter)
         ytest_pred = model.predict(Xtest, num_iteration=best_iter)
         feature_importance = pd.DataFrame(data=model.feature_importance(importance_type=impt_type),
@@ -207,7 +209,7 @@ def lgb_reg_hold_out(
                                           columns=["importance"])
         # incremental training
         if incremental_training:
-            model.save_model('model-lgb.txt')
+            model.save_model('model-lgb.txt')#将模型保存下来
             params['num_iterations'] = int(best_iter * incremental_training_rate)
             print(f"{Fore.CYAN}[info]{Fore.RESET} incremental training, best iteration {best_iter}, continue training {params['num_iterations']}")
 
@@ -281,6 +283,7 @@ def lgb_reg_hold_out(
         'model': model,
         'ytest_pred': ytest_pred,
         'ytrain_pred': ytrain_pred if return_train_pred else None,
+        #如果return_train_pred为真则赋值给ytrain_pred不然None赋值给ytrain_pred
         'feature_importance': feature_importance,
         'valid_scores': valid_scores,
     }
